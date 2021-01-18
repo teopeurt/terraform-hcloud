@@ -1,6 +1,6 @@
 resource "hcloud_ssh_key" "default" {
   name       = var.ssh_public_key_name
-  public_key = "${file(var.ssh_public_key)}"
+  public_key = file(var.ssh_public_key)
 }
 
 resource "hcloud_network" "default" {
@@ -9,7 +9,7 @@ resource "hcloud_network" "default" {
 }
 
 resource "hcloud_network_subnet" "default" {
-  network_id   = "${hcloud_network.default.id}"
+  network_id   = hcloud_network.default.id
   type         = "server"
   network_zone = var.private_network_zone
   ip_range     = var.private_ip_range
@@ -17,7 +17,7 @@ resource "hcloud_network_subnet" "default" {
 
 resource "hcloud_floating_ip" "default" {
   type          = "ipv4"
-  home_location = "${var.hcloud_location}"
+  home_location = var.hcloud_location
   name          = var.floating_ip_name
 }
 
@@ -35,10 +35,10 @@ resource "hcloud_server" "server" {
     inline = [var.install_ansible_dependencies ? var.ansible_dependencies_install_command : "sleep 0"]
 
     connection {
-      host        = "${self.ipv4_address}"
+      host        = self.ipv4_address
       type        = "ssh"
       user        = "root"
-      private_key = "${file(var.ssh_private_key)}"
+      private_key = file(var.ssh_private_key)
     }
   }
 
@@ -55,8 +55,8 @@ resource "hcloud_server" "server" {
       }
 
       extra_vars = {
-        cluster_name = "${var.cluster_name}"
-        floating_ip  = "${hcloud_floating_ip.default.ip_address}"
+        cluster_name = var.cluster_name
+        floating_ip  = hcloud_floating_ip.default.ip_address
         server_name  = each.value.name
         ansible_user = "root"
       }
@@ -65,7 +65,7 @@ resource "hcloud_server" "server" {
     }
 
     connection {
-      host = "${self.ipv4_address}"
+      host = self.ipv4_address
       type = "ssh"
       user = "root"
     }
@@ -75,10 +75,10 @@ resource "hcloud_server" "server" {
     inline = [var.run_rancher_deploy ? "${var.rancher_node_command} ${each.value.roles} --internal-address ${each.value.private_ip_address}" : ""]
 
     connection {
-      host        = "${self.ipv4_address}"
+      host        = self.ipv4_address
       type        = "ssh"
       user        = var.post_ansible_ssh_user
-      private_key = "${file(var.ssh_private_key)}"
+      private_key = file(var.ssh_private_key)
     }
   }
 }
